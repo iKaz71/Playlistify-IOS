@@ -1,4 +1,6 @@
 import SwiftUI
+import Kingfisher
+
 
 struct SalaScreen: View {
     let sessionId: String
@@ -63,11 +65,14 @@ private struct TarjetaCancion: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            AsyncImage(url: URL(string: cancion.thumbnailUrl)) { img in
-                img.resizable()
-            } placeholder: { ProgressView() }
+            KFImage(URL(string: cancion.thumbnailUrl))
+                .resizable()
+                .placeholder {
+                    ProgressView()
+                }
+
             .frame(width: grande ? 100 : 80,
-                   height: grande ? 60 : 50)
+                   height: grande ? 60 : 50)  
             .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -75,11 +80,36 @@ private struct TarjetaCancion: View {
                     .foregroundColor(.white)
                     .fontWeight(.semibold)
                     .lineLimit(2)
+
                 Text("Agregada por: \(cancion.usuario)")
                     .foregroundColor(.white.opacity(0.7))
                     .font(.caption)
+
+                // 🧪 Debug: mostrar URL
+                Text(cancion.thumbnailUrl)
+                    .foregroundColor(.white.opacity(0.5))
+                    .font(.caption2)
+                    .lineLimit(1)
             }
+
         }
+    }
+
+    // 🧠 Parseo de duración tipo "PT4M13S"
+    private func formatDuration(_ iso: String) -> String {
+        let pattern = #"PT(?:(\d+)M)?(?:(\d+)S)?"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: iso, range: NSRange(iso.startIndex..., in: iso)) else {
+            return "--:--"
+        }
+
+        let minRange = match.range(at: 1)
+        let secRange = match.range(at: 2)
+
+        let minutes = minRange.location != NSNotFound ? Int((iso as NSString).substring(with: minRange)) ?? 0 : 0
+        let seconds = secRange.location != NSNotFound ? Int((iso as NSString).substring(with: secRange)) ?? 0 : 0
+
+        return String(format: "%d:%02d", minutes, seconds)
     }
 }
 

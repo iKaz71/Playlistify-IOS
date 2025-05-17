@@ -6,11 +6,20 @@
 //
 import Foundation
 
-struct Cancion: Identifiable, Codable {
-    var id: String         // ID del video (YouTube)
-    var titulo: String
-    var thumbnailUrl: String
-    var usuario: String
-    var duration: String
+struct Cancion: Codable, Identifiable {
+    let id: String
+    let titulo: String
+    let thumbnailUrl: String
+    let usuario: String
+    let duration: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case titulo
+        case thumbnailUrl
+        case usuario
+        case duration
+    }
 }
+
 
