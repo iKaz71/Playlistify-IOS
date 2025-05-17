@@ -5,6 +5,7 @@
 
 import Foundation
 import Alamofire
+import FirebaseDatabase
 
 // MARK: - Cliente -------------------------------------------------------------
 
@@ -63,6 +64,39 @@ final class PlaylistifyAPI {
                     completion([])
                 }
             }
+    }
+    
+    
+    func escucharCola(sessionId: String, onUpdate: @escaping ([Cancion]) -> Void) {
+        let ref = Database.database().reference()
+            .child("sessions")
+            .child(sessionId)
+            .child("queue")
+
+        ref.observe(.value) { snapshot in
+            var canciones: [Cancion] = []
+
+            for child in snapshot.children {
+                if let snap = child as? DataSnapshot,
+                   let dict = snap.value as? [String: Any] {
+                    let id = dict["id"] as? String ?? ""
+                    let titulo = dict["titulo"] as? String ?? ""
+                    let usuario = dict["usuario"] as? String ?? ""
+                    let thumbnailUrl = dict["thumbnailUrl"] as? String ?? ""
+                    let duration = dict["duration"] as? String ?? ""
+
+                    canciones.append(Cancion(
+                        id: id,
+                        titulo: titulo,
+                        thumbnailUrl: thumbnailUrl,
+                        usuario: usuario,
+                        duration: duration
+                    ))
+                }
+            }
+
+            onUpdate(canciones)
+        }
     }
 }
 

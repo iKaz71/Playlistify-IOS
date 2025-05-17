@@ -48,7 +48,7 @@ struct SalaScreen: View {
             }
         }
         .onAppear {
-            PlaylistifyAPI.shared.obtenerCola(sessionId: sessionId) { lista in
+            PlaylistifyAPI.shared.escucharCola(sessionId: sessionId) { lista in
                 DispatchQueue.main.async {
                     self.canciones = lista
                     self.isLoading = false
@@ -72,7 +72,7 @@ private struct TarjetaCancion: View {
                 }
 
             .frame(width: grande ? 100 : 80,
-                   height: grande ? 60 : 50)  
+                   height: grande ? 60 : 50)
             .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 4) {

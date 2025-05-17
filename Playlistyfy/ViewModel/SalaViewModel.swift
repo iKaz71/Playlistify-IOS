@@ -7,12 +7,11 @@ class SalaViewModel: ObservableObject {
         canciones.first
     }
 
-    func cargarCola(sessionId: String) {
-        PlaylistifyAPI.shared.obtenerCola(sessionId: sessionId) { [weak self] lista in
-            DispatchQueue.main.async {
-                self?.canciones = lista
-            }
+    func escucharCola(sessionId: String) {
+        FirebaseQueueManager.shared.escucharCola(sessionId: sessionId) { [weak self] lista in
+            self?.canciones = lista
         }
     }
 }
+
 
