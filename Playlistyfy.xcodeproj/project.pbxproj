@@ -8,10 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		833810F32DC83D3A00760697 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 833810F22DC83D3A00760697 /* Alamofire */; };
+		83805C572DD8E85C00CB1DF6 /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 83805C562DD8E84900CB1DF6 /* Secrets.xcconfig */; };
+		83805C592DD8E89200CB1DF6 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 83805C582DD8E88E00CB1DF6 /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		833810E32DC832DF00760697 /* Playlistyfy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Playlistyfy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		83805C562DD8E84900CB1DF6 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		83805C582DD8E88E00CB1DF6 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,6 +41,8 @@
 		833810DA2DC832DF00760697 = {
 			isa = PBXGroup;
 			children = (
+				83805C582DD8E88E00CB1DF6 /* .gitignore */,
+				83805C562DD8E84900CB1DF6 /* Secrets.xcconfig */,
 				833810E52DC832DF00760697 /* Playlistyfy */,
 				833810E42DC832DF00760697 /* Products */,
 			);
@@ -118,6 +124,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				83805C572DD8E85C00CB1DF6 /* Secrets.xcconfig in Resources */,
+				83805C592DD8E89200CB1DF6 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,32 @@
+//
+//  .gitignore
+//  Playlistyfy
+//
+//  Created by Lex Santos on 17/05/25.
+//
+
+# Xcode
+*.xcuserstate
+*.xcworkspace
+DerivedData/
+build/
+.idea/
+*.xcodeproj/project.xcworkspace/
+
+# Swift Package Manager
+.swiftpm/
+Packages/
+.build/
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Firebase
+GoogleService-Info.plist
+
+# Secrets
+Secrets.xcconfig
