@@ -30,3 +30,6 @@ GoogleService-Info.plist
 
 # Secrets
 Secrets.xcconfig
+
+# Info de iOS
+Playlistyfy/Info.plist

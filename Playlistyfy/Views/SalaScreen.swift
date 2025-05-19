@@ -1,25 +1,47 @@
 import SwiftUI
 import Kingfisher
 
-
 struct SalaScreen: View {
     let sessionId: String
     @State private var canciones: [Cancion] = []
     @State private var isLoading = true
+    @State private var mostrarBuscador = false
 
     var body: some View {
+        let _ = YouTubeApi.shared
+
         ZStack {
             LinearGradient(colors: [
                 Color(red: 28/255, green: 28/255, blue: 30/255),
-                Color(red: 142/255, green: 45/255, blue: 226/255)],
-                startPoint: .top, endPoint: .bottom)
+                Color(red: 142/255, green: 45/255, blue: 226/255)
+            ], startPoint: .top, endPoint: .bottom)
             .ignoresSafeArea()
 
             if isLoading {
                 ProgressView().tint(.white)
             } else {
                 VStack(alignment: .leading, spacing: 20) {
-                    // ---------- ACTUAL -----------
+                    // --- Barra superior con código y lupa ---
+                    HStack {
+                        Text("Sala: \(sessionId.prefix(4))")
+                            .foregroundColor(.white)
+                            .font(.subheadline)
+                            .bold()
+
+                        Spacer()
+
+                        Button {
+                            mostrarBuscador = true
+                        } label: {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.white)
+                                .padding(10)
+                                .background(Color.white.opacity(0.1))
+                                .clipShape(Circle())
+                        }
+                    }
+
+                    // --- Actual ---
                     Text("Reproduciendo ahora")
                         .font(.title2).bold().foregroundColor(.white)
 
@@ -32,7 +54,7 @@ struct SalaScreen: View {
 
                     Divider().background(Color.white.opacity(0.4))
 
-                    // ---------- COLA -------------
+                    // --- Cola ---
                     Text("En cola")
                         .font(.headline).foregroundColor(.white)
 
@@ -48,12 +70,17 @@ struct SalaScreen: View {
             }
         }
         .onAppear {
+            // 🔁 Escucho en tiempo real los cambios en la cola
             PlaylistifyAPI.shared.escucharCola(sessionId: sessionId) { lista in
                 DispatchQueue.main.async {
                     self.canciones = lista
                     self.isLoading = false
                 }
             }
+        }
+        .sheet(isPresented: $mostrarBuscador) {
+            // Aquí mostraré el buscador de canciones
+            BusquedaYTView(sessionId: sessionId)
         }
     }
 }
@@ -70,10 +97,9 @@ private struct TarjetaCancion: View {
                 .placeholder {
                     ProgressView()
                 }
-
-            .frame(width: grande ? 100 : 80,
-                   height: grande ? 60 : 50)
-            .cornerRadius(8)
+                .frame(width: grande ? 100 : 80,
+                       height: grande ? 60 : 50)
+                .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(cancion.titulo)
@@ -85,17 +111,14 @@ private struct TarjetaCancion: View {
                     .foregroundColor(.white.opacity(0.7))
                     .font(.caption)
 
-                // 🧪 Debug: mostrar URL
-                Text(cancion.thumbnailUrl)
-                    .foregroundColor(.white.opacity(0.5))
+                Text(formatDuration(cancion.duration))
+                    .foregroundColor(.white.opacity(0.6))
                     .font(.caption2)
-                    .lineLimit(1)
             }
-
         }
     }
 
-    // 🧠 Parseo de duración tipo "PT4M13S"
+    // 🧠 Convierto "PT4M13S" a "4:13"
     private func formatDuration(_ iso: String) -> String {
         let pattern = #"PT(?:(\d+)M)?(?:(\d+)S)?"#
         guard let regex = try? NSRegularExpression(pattern: pattern),
@@ -113,5 +136,5 @@ private struct TarjetaCancion: View {
     }
 }
 
-#Preview { SalaScreen(sessionId: "debug‑id") }
+#Preview { SalaScreen(sessionId: "debug-id") }
 

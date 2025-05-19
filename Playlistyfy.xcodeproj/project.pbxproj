@@ -20,9 +20,22 @@
 		83805C582DD8E88E00CB1DF6 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		83805C702DD9717000CB1DF6 /* Exceptions for "Playlistyfy" folder in "Playlistyfy" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 833810E22DC832DF00760697 /* Playlistyfy */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		833810E52DC832DF00760697 /* Playlistyfy */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				83805C702DD9717000CB1DF6 /* Exceptions for "Playlistyfy" folder in "Playlistyfy" target */,
+			);
 			path = Playlistyfy;
 			sourceTree = "<group>";
 		};
@@ -281,6 +294,8 @@
 				DEVELOPMENT_TEAM = PXF5577GNT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Playlistyfy/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -309,6 +324,8 @@
 				DEVELOPMENT_TEAM = PXF5577GNT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Playlistyfy/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

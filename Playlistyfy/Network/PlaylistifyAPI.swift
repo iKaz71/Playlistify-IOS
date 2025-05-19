@@ -7,7 +7,7 @@ import Foundation
 import Alamofire
 import FirebaseDatabase
 
-// MARK: - Cliente -------------------------------------------------------------
+// MARK: - Cliente API central
 
 final class PlaylistifyAPI {
     static let shared = PlaylistifyAPI()
@@ -43,13 +43,11 @@ final class PlaylistifyAPI {
     func obtenerCola(sessionId: String,
                      completion: @escaping ([Cancion]) -> Void)
     {
-        // 🔑 Elimina espacios / saltos de línea que causaban 404
         let cleanId = sessionId.trimmingCharacters(in: .whitespacesAndNewlines)
-        print("🧪 sessionId recibido:", sessionId)
+        print("🧪 sessionId recibido:", cleanId)
 
-        let url     = "https://playlistify-api-production.up.railway.app/session/\(cleanId)"
-
-        print("➡️  GET \(url)")                    // ayuda a depurar
+        let url = "https://playlistify-api-production.up.railway.app/session/\(cleanId)"
+        print("➡️  GET \(url)")
 
         AF.request(url)
             .validate()
@@ -58,15 +56,16 @@ final class PlaylistifyAPI {
                 case .success(let data):
                     let canciones = data.queue?.values.map { $0 } ?? []
                     completion(canciones)
-
                 case .failure(let err):
                     print("❌ obtenerCola:", err)
                     completion([])
                 }
             }
     }
-    
-    
+
+    //------------------------------------------------------------------------//
+    //  Firebase listener para tiempo real
+    //------------------------------------------------------------------------//
     func escucharCola(sessionId: String, onUpdate: @escaping ([Cancion]) -> Void) {
         let ref = Database.database().reference()
             .child("sessions")
@@ -98,5 +97,63 @@ final class PlaylistifyAPI {
             onUpdate(canciones)
         }
     }
+
+    //------------------------------------------------------------------------//
+    //  POST /queue/add  →  Agregar canción a la cola
+    //------------------------------------------------------------------------//
+    func agregarCancion(sessionId: String, cancion: Cancion) {
+        let url = "https://playlistify-api-production.up.railway.app/queue/add"
+
+        // 🔐 Decodifica posibles caracteres HTML (ej: &quot;)
+        let tituloLimpio = cancion.titulo.htmlDecoded
+
+        let parametros: [String: String] = [
+            "sessionId": sessionId,
+            "id": cancion.id,
+            "titulo": tituloLimpio,
+            "thumbnailUrl": cancion.thumbnailUrl,
+            "usuario": cancion.usuario,
+            "duration": cancion.duration
+
+        ]
+        print("✅ Enviando duración ISO ya calculada:", cancion.duration)
+
+        print("📤 Intentando agregar canción con parámetros:", parametros)
+
+        AF.request(
+            url,
+            method: .post,
+            parameters: parametros,
+            encoding: JSONEncoding.default,
+            headers: [.contentType("application/json")]
+        )
+        .validate()
+        .response { response in
+            if let error = response.error {
+                print("❌ Error al agregar canción: \(error)")
+            } else {
+                print("✅ Canción agregada exitosamente")
+            }
+        }
+    }
 }
+
+
+
+
+
+// MARK: - Extensión para decodificar caracteres HTML como &quot;
+extension String {
+    var htmlDecoded: String {
+        let data = Data(self.utf8)
+        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+            .documentType: NSAttributedString.DocumentType.html
+        ]
+        if let decoded = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
+            return decoded.string
+        }
+        return self
+    }
+}
+
 
