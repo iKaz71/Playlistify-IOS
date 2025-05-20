@@ -15,23 +15,31 @@ final class FirebaseQueueManager {
     private init() {}
 
     func escucharCola(sessionId: String, onUpdate: @escaping ([Cancion]) -> Void) {
-        let ref = database.child("sessions").child(sessionId).child("queue")
+        let ref = database.child("queues").child(sessionId)  // ✅ Nodo correcto usado por Android y TV
 
         ref.observe(.value) { snapshot in
+            print("📥 Snapshot recibido: \(snapshot.value ?? "sin datos")")
+
             var lista: [Cancion] = []
 
             for child in snapshot.children {
-                if let snap = child as? DataSnapshot,
-                   let value = snap.value as? [String: Any] {
-                    let cancion = Cancion(
-                        id: value["id"] as? String ?? "",
-                        titulo: value["titulo"] as? String ?? "",
-                        thumbnailUrl: value["thumbnailUrl"] as? String ?? "",
-                        usuario: value["usuario"] as? String ?? "",
-                        duration: value["duration"] as? String ?? ""
-                    )
-                    lista.append(cancion)
-                }
+                guard let snap = child as? DataSnapshot else { continue }
+
+                let id = snap.childSnapshot(forPath: "id").value as? String ?? ""
+                let titulo = snap.childSnapshot(forPath: "titulo").value as? String ?? ""
+                let usuario = snap.childSnapshot(forPath: "usuario").value as? String ?? ""
+                let thumbnailUrl = snap.childSnapshot(forPath: "thumbnailUrl").value as? String ?? ""
+                let duration = snap.childSnapshot(forPath: "duration").value as? String ?? ""
+
+                print("🎧 Nodo leído: id=\(id), título=\(titulo.prefix(15)), dur=\(duration.prefix(10))")
+
+                lista.append(Cancion(
+                    id: id,
+                    titulo: titulo,
+                    thumbnailUrl: thumbnailUrl,
+                    usuario: usuario,
+                    duration: duration
+                ))
             }
 
             DispatchQueue.main.async {
@@ -40,3 +48,4 @@ final class FirebaseQueueManager {
         }
     }
 }
+

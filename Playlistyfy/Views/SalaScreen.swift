@@ -1,6 +1,7 @@
 import SwiftUI
 import Kingfisher
 
+
 struct SalaScreen: View {
     let sessionId: String
     @State private var canciones: [Cancion] = []
@@ -70,14 +71,14 @@ struct SalaScreen: View {
             }
         }
         .onAppear {
-            // 🔁 Escucho en tiempo real los cambios en la cola
-            PlaylistifyAPI.shared.escucharCola(sessionId: sessionId) { lista in
+            FirebaseQueueManager.shared.escucharCola(sessionId: sessionId) { lista in
                 DispatchQueue.main.async {
                     self.canciones = lista
                     self.isLoading = false
                 }
             }
         }
+
         .sheet(isPresented: $mostrarBuscador) {
             // Aquí mostraré el buscador de canciones
             BusquedaYTView(sessionId: sessionId)
@@ -117,23 +118,7 @@ private struct TarjetaCancion: View {
             }
         }
     }
-
-    // 🧠 Convierto "PT4M13S" a "4:13"
-    private func formatDuration(_ iso: String) -> String {
-        let pattern = #"PT(?:(\d+)M)?(?:(\d+)S)?"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: iso, range: NSRange(iso.startIndex..., in: iso)) else {
-            return "--:--"
-        }
-
-        let minRange = match.range(at: 1)
-        let secRange = match.range(at: 2)
-
-        let minutes = minRange.location != NSNotFound ? Int((iso as NSString).substring(with: minRange)) ?? 0 : 0
-        let seconds = secRange.location != NSNotFound ? Int((iso as NSString).substring(with: secRange)) ?? 0 : 0
-
-        return String(format: "%d:%02d", minutes, seconds)
-    }
+    
 }
 
 #Preview { SalaScreen(sessionId: "debug-id") }

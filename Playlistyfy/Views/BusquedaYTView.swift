@@ -108,20 +108,5 @@ struct BusquedaYTView: View {
         }
     }
 
-    private func formatDuration(_ iso: String) -> String {
-        let pattern = #"PT(?:(\d+)M)?(?:(\d+)S)?"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: iso, range: NSRange(iso.startIndex..., in: iso)) else {
-            return "--:--"
-        }
-
-        let minRange = match.range(at: 1)
-        let secRange = match.range(at: 2)
-
-        let minutes = minRange.location != NSNotFound ? Int((iso as NSString).substring(with: minRange)) ?? 0 : 0
-        let seconds = secRange.location != NSNotFound ? Int((iso as NSString).substring(with: secRange)) ?? 0 : 0
-
-        return String(format: "%d:%02d", minutes, seconds)
-    }
 }
 
