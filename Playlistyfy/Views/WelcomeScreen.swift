@@ -1,8 +1,3 @@
-//
-//  WelcomeScreen.swift
-//  Playlistify
-//
-
 import SwiftUI
 
 struct WelcomeScreen: View {
@@ -11,7 +6,7 @@ struct WelcomeScreen: View {
     @State private var isValidCode = false
     @State private var showError = false
     @State private var isLoading = false
-    @State private var navigate = false
+    @State private var mostrarSala = false
     @State private var sessionId: String?
 
     var code: String {
@@ -19,8 +14,10 @@ struct WelcomeScreen: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
+        ZStack {
+            if mostrarSala, let id = sessionId {
+                SalaScreen(sessionId: id)
+            } else {
                 LinearGradient(
                     colors: [Color(red: 28/255, green: 28/255, blue: 30/255),
                              Color(red: 142/255, green: 45/255, blue: 226/255)],
@@ -91,7 +88,7 @@ struct WelcomeScreen: View {
                                 isLoading = false
                                 if let id = result {
                                     self.sessionId = id
-                                    self.navigate = true
+                                    self.mostrarSala = true
                                     print("✅ Código válido. Session ID: \(id)")
                                 } else {
                                     showError = true
@@ -120,12 +117,6 @@ struct WelcomeScreen: View {
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .padding()
-            }
-            // ✅ Aquí va la navegación corregida
-            .navigationDestination(isPresented: $navigate) {
-                if let sessionId = sessionId {
-                    SalaScreen(sessionId: sessionId)
-                }
             }
         }
     }
