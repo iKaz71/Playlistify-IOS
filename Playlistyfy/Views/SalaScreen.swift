@@ -12,8 +12,8 @@ struct SalaScreen: View {
             Color(red: 28/255, green: 28/255, blue: 30/255)
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // 🔝 Barra superior
+            VStack(spacing: 16) {
+                // Barra superior
                 HStack {
                     Text("Playlistify")
                         .font(.headline)
@@ -39,34 +39,40 @@ struct SalaScreen: View {
                     ProgressView().tint(.white)
                     Spacer()
                 } else {
+                    // 🔊 Reproduciendo ahora
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Reproduciendo ahora:")
+                            .font(.headline)
+                            .foregroundColor(.white)
+
+                        if let actual = canciones.first {
+                            CardCancion(cancion: actual, incluirBoton: true)
+                        } else {
+                            Text("Sin canciones en cola")
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+
+                        
+
+                        Text("En cola:")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal)
+
+                    // Solo esta parte es scrollable
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Reproduciendo ahora:")
-                                .font(.headline)
-                                .foregroundColor(.white)
-
-                            if let actual = canciones.first {
-                                CardCancion(cancion: actual, incluirBoton: true)
-                            } else {
-                                Text("Sin canciones en cola")
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
-
-                            Divider().background(Color.white.opacity(0.3))
-
-                            Text("En cola:")
-                                .font(.headline)
-                                .foregroundColor(.white)
-
-                            LazyVStack(spacing: 12) {
-                                ForEach(Array(canciones.dropFirst())) { c in
-                                    CardCancion(cancion: c)
-                                }
+                        LazyVStack(spacing: 12) {
+                            ForEach(Array(canciones.dropFirst())) { c in
+                                CardCancion(cancion: c)
                             }
                         }
-                        .padding()
+                        .padding(.horizontal)
+                        .padding(.top, 4)
                     }
                 }
+
+                Spacer(minLength: 8)
             }
         }
         .sheet(isPresented: $mostrarBuscador) {
@@ -83,7 +89,6 @@ struct SalaScreen: View {
     }
 }
 
-// ✅ CardCancion reemplaza TarjetaCancion, ahora como Card con duración alineada a la derecha
 private struct CardCancion: View {
     let cancion: Cancion
     var incluirBoton: Bool = false
