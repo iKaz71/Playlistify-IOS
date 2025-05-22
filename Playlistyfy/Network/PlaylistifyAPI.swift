@@ -145,15 +145,22 @@ final class PlaylistifyAPI {
 // MARK: - Extensión para decodificar caracteres HTML como &quot;
 extension String {
     var htmlDecoded: String {
-        let data = Data(self.utf8)
+        guard let data = self.data(using: .utf8), !data.isEmpty else {
+            return self
+        }
+
         let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-            .documentType: NSAttributedString.DocumentType.html
+            .documentType: NSAttributedString.DocumentType.html,
+            .characterEncoding: String.Encoding.utf8.rawValue
         ]
+
         if let decoded = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
             return decoded.string
         }
+
         return self
     }
+
 }
 
 
