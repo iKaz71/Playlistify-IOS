@@ -10,70 +10,110 @@ struct BusquedaYTView: View {
     @State private var isAdding = false
     @State private var showConfirmation = false
 
-    var body: some View {
-        NavigationView {
-            VStack {
-                TextField("Buscar en YouTube", text: $query)
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                    .focused($isFocused)
-                    .onSubmit {
-                        buscarCanciones()
-                    }
+    let rojoVivo = Color(red: 1, green: 0.2, blue: 0.3)
 
+    var body: some View {
+        ZStack {
+            Color(red: 28/255, green: 28/255, blue: 30/255)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                // 🔍 Etiqueta y campo de búsqueda
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Buscar en YouTube")
+                        .foregroundColor(.white)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .padding(.top, 12)
+                        .padding(.horizontal)
+
+                    HStack {
+                        TextField("", text: $query)
+                            .padding(.leading, 12)
+                            .padding(.vertical, 10)
+                            .foregroundColor(.white)
+                            .focused($isFocused)
+                            .onSubmit {
+                                buscarCanciones()
+                            }
+
+                        Button(action: {
+                            buscarCanciones()
+                            ocultarTeclado()
+                        }) {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(rojoVivo)
+                                .padding(.trailing, 12)
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(rojoVivo, lineWidth: 1.5)
+                    )
+                    .padding(.horizontal)
+                }
+
+                // 🕵️‍♂️ Resultados
                 if resultados.isEmpty {
-                    Text("Escribe algo para comenzar la búsqueda.")
-                        .foregroundColor(.gray)
+                    Text("Realiza la búsqueda para ver resultados")
+                        .foregroundColor(.white.opacity(0.5))
                         .padding()
                 } else {
-                    List(resultados) { cancion in
-                        HStack(spacing: 12) {
-                            KFImage(URL(string: cancion.thumbnailUrl))
-                                .resizable()
-                                .frame(width: 80, height: 50)
-                                .cornerRadius(8)
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(resultados) { cancion in
+                                HStack(spacing: 12) {
+                                    KFImage(URL(string: cancion.thumbnailUrl))
+                                        .resizable()
+                                        .frame(width: 80, height: 50)
+                                        .cornerRadius(8)
 
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(cancion.titulo)
-                                    .fontWeight(.semibold)
-                                    .lineLimit(2)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(cancion.titulo.htmlDecoded)
+                                            .foregroundColor(.white)
+                                            .fontWeight(.semibold)
+                                            .lineLimit(2)
 
-                                Text("Duración: \(formatDuration(cancion.duration))")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
+                                        Text("Duración: \(formatDuration(cancion.duration))")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+
+                                    Spacer()
+
+                                    Button(action: {
+                                        agregar(cancion: cancion)
+                                    }) {
+                                        Image(systemName: "plus")
+                                            .foregroundColor(rojoVivo)
+                                            .font(.title2)
+                                    }
+                                    .disabled(isAdding)
+                                }
+                                .padding()
+                                .background(Color.white.opacity(0.05))
+                                .cornerRadius(12)
+                                .padding(.horizontal)
                             }
-
-                            Spacer()
-
-                            Button(action: {
-                                agregar(cancion: cancion)
-                            }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .foregroundColor(.blue)
-                                    .font(.title2)
-                            }
-                            .disabled(isAdding)
                         }
-                        .padding(.vertical, 4)
+                        .padding(.top)
                     }
                 }
 
                 Spacer()
             }
-            .navigationTitle("Buscar canción")
-            .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                isFocused = true
-            }
             .alert(isPresented: $showConfirmation) {
-                Alert(title: Text("🎶 Canción agregada"),
-                      message: Text("Se agregó correctamente a la cola."),
-                      dismissButton: .default(Text("OK")) {
-                          dismiss()
-                      })
+                Alert(
+                    title: Text("🎶 Canción agregada"),
+                    message: Text("Se agregó correctamente a la cola."),
+                    dismissButton: .default(Text("OK")) {
+                        dismiss()
+                    }
+                )
             }
+        }
+        .onAppear {
+            isFocused = true
         }
         .presentationDetents([.medium, .large])
     }
@@ -82,7 +122,8 @@ struct BusquedaYTView: View {
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
 
         YouTubeApi.shared.buscarVideos(query: query) { lista in
-            DispatchQueue.main.async {
+            // ✅ Solución al ciclo de AttributeGraph
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 self.resultados = lista
             }
         }
@@ -108,5 +149,11 @@ struct BusquedaYTView: View {
         }
     }
 
+    // ✅ Ocultar teclado manualmente
+    private func ocultarTeclado() {
+        isFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                        to: nil, from: nil, for: nil)
+    }
 }
 

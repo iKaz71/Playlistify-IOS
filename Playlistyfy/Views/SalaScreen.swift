@@ -13,7 +13,7 @@ struct SalaScreen: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // ✅ Barra superior igual que el fondo
+                // 🔝 Barra superior
                 HStack {
                     Text("Playlistify")
                         .font(.headline)
@@ -24,9 +24,7 @@ struct SalaScreen: View {
                     HStack(spacing: 20) {
                         Image(systemName: "bell")
                         Image(systemName: "magnifyingglass")
-                            .onTapGesture {
-                                mostrarBuscador = true
-                            }
+                            .onTapGesture { mostrarBuscador = true }
                         Image(systemName: "person.circle")
                     }
                     .foregroundColor(.white)
@@ -35,7 +33,6 @@ struct SalaScreen: View {
                 .padding(.horizontal)
                 .padding(.top, 20)
                 .padding(.bottom, 10)
-                .background(Color(red: 28/255, green: 28/255, blue: 30/255)) // mismo fondo
 
                 if isLoading {
                     Spacer()
@@ -49,13 +46,7 @@ struct SalaScreen: View {
                                 .foregroundColor(.white)
 
                             if let actual = canciones.first {
-                                // ✅ Tarjeta con botón dentro
-                                VStack(alignment: .leading, spacing: 10) {
-                                    TarjetaCancion(cancion: actual, grande: true, incluirBoton: true)
-                                }
-                                .padding(8)
-                                .background(Color.white.opacity(0.05))
-                                .cornerRadius(10)
+                                CardCancion(cancion: actual, incluirBoton: true)
                             } else {
                                 Text("Sin canciones en cola")
                                     .foregroundColor(.white.opacity(0.7))
@@ -69,7 +60,7 @@ struct SalaScreen: View {
 
                             LazyVStack(spacing: 12) {
                                 ForEach(Array(canciones.dropFirst())) { c in
-                                    TarjetaCancion(cancion: c)
+                                    CardCancion(cancion: c)
                                 }
                             }
                         }
@@ -92,10 +83,9 @@ struct SalaScreen: View {
     }
 }
 
-// ✅ TarjetaCancion mejorada con botón opcional
-private struct TarjetaCancion: View {
+// ✅ CardCancion reemplaza TarjetaCancion, ahora como Card con duración alineada a la derecha
+private struct CardCancion: View {
     let cancion: Cancion
-    var grande: Bool = false
     var incluirBoton: Bool = false
 
     var body: some View {
@@ -104,7 +94,7 @@ private struct TarjetaCancion: View {
                 KFImage(URL(string: cancion.thumbnailUrl))
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: grande ? 90 : 70, height: grande ? 60 : 50)
+                    .frame(width: 70, height: 50)
                     .clipped()
                     .cornerRadius(8)
 
@@ -117,19 +107,18 @@ private struct TarjetaCancion: View {
                     Text("Agregado por: \(cancion.usuario)")
                         .foregroundColor(.white.opacity(0.7))
                         .font(.caption)
-
-                    Text(formatDuration(cancion.duration))
-                        .foregroundColor(.white.opacity(0.6))
-                        .font(.caption2)
                 }
 
                 Spacer()
+
+                Text(formatDuration(cancion.duration))
+                    .foregroundColor(.white.opacity(0.6))
+                    .font(.caption)
             }
 
-            // ✅ Botón solo si se requiere
             if incluirBoton {
                 Button(action: {
-                    // funcionalidad futura
+                    // Reproducir playlist
                 }) {
                     HStack {
                         Image(systemName: "play.fill")
@@ -144,8 +133,9 @@ private struct TarjetaCancion: View {
                 }
             }
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 8)
+        .padding()
+        .background(Color.white.opacity(0.05))
+        .cornerRadius(12)
     }
 }
 
