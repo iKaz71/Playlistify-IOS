@@ -38,8 +38,8 @@ struct BusquedaYTView: View {
                             }
 
                         Button(action: {
-                            buscarCanciones()
                             ocultarTeclado()
+                            buscarCanciones()
                         }) {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(rojoVivo)
@@ -121,13 +121,21 @@ struct BusquedaYTView: View {
     private func buscarCanciones() {
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
 
-        YouTubeApi.shared.buscarVideos(query: query) { lista in
-            // ✅ Solución al ciclo de AttributeGraph
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                self.resultados = lista
+        // 🔐 1. Oculta teclado primero
+        ocultarTeclado()
+
+        // ⏳ 2. Espera 0.1 segundos para asegurarte de que el teclado se cerró
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            YouTubeApi.shared.buscarVideos(query: query) { lista in
+                DispatchQueue.main.async {
+                    withAnimation(.easeIn(duration: 0.15)) {
+                        self.resultados = lista
+                    }
+                }
             }
         }
     }
+
 
     private func agregar(cancion: YouTubeVideoItem) {
         isAdding = true
@@ -149,7 +157,6 @@ struct BusquedaYTView: View {
         }
     }
 
-    // ✅ Ocultar teclado manualmente
     private func ocultarTeclado() {
         isFocused = false
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),

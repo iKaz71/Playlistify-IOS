@@ -12,6 +12,8 @@
 		83805C592DD8E89200CB1DF6 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 83805C582DD8E88E00CB1DF6 /* .gitignore */; };
 		83805C5C2DD8F74900CB1DF6 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 83805C5B2DD8F74900CB1DF6 /* Kingfisher */; };
 		83805C622DD90C6D00CB1DF6 /* FirebaseDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 83805C612DD90C6D00CB1DF6 /* FirebaseDatabase */; };
+		839218CC2DDEB1E90063763D /* SwiftUIIntrospect in Frameworks */ = {isa = PBXBuildFile; productRef = 839218CB2DDEB1E90063763D /* SwiftUIIntrospect */; };
+		839218D02DDEB1E90063763D /* SwiftUIIntrospect-Static in Frameworks */ = {isa = PBXBuildFile; productRef = 839218CF2DDEB1E90063763D /* SwiftUIIntrospect-Static */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +51,8 @@
 				83805C622DD90C6D00CB1DF6 /* FirebaseDatabase in Frameworks */,
 				83805C5C2DD8F74900CB1DF6 /* Kingfisher in Frameworks */,
 				833810F32DC83D3A00760697 /* Alamofire in Frameworks */,
+				839218CC2DDEB1E90063763D /* SwiftUIIntrospect in Frameworks */,
+				839218D02DDEB1E90063763D /* SwiftUIIntrospect-Static in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +100,7 @@
 				833810F22DC83D3A00760697 /* Alamofire */,
 				83805C5B2DD8F74900CB1DF6 /* Kingfisher */,
 				83805C612DD90C6D00CB1DF6 /* FirebaseDatabase */,
+				839218CB2DDEB1E90063763D /* SwiftUIIntrospect */,
 			);
 			productName = playlistyfy;
 			productReference = 833810E32DC832DF00760697 /* Playlistyfy.app */;
@@ -129,6 +134,7 @@
 				833810F12DC83D3A00760697 /* XCRemoteSwiftPackageReference "Alamofire" */,
 				83805C5A2DD8F74900CB1DF6 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				83805C602DD90B2000CB1DF6 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				839218CA2DDEB1E90063763D /* XCRemoteSwiftPackageReference "swiftui-introspect" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 833810E42DC832DF00760697 /* Products */;
@@ -392,6 +398,14 @@
 				minimumVersion = 11.12.0;
 			};
 		};
+		839218CA2DDEB1E90063763D /* XCRemoteSwiftPackageReference "swiftui-introspect" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/siteline/swiftui-introspect";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -409,6 +423,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 83805C602DD90B2000CB1DF6 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseDatabase;
+		};
+		839218CB2DDEB1E90063763D /* SwiftUIIntrospect */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 839218CA2DDEB1E90063763D /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
+			productName = SwiftUIIntrospect;
+		};
+		839218CF2DDEB1E90063763D /* SwiftUIIntrospect-Static */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 839218CA2DDEB1E90063763D /* XCRemoteSwiftPackageReference "swiftui-introspect" */;
+			productName = "SwiftUIIntrospect-Static";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

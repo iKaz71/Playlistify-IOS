@@ -1,5 +1,6 @@
 import SwiftUI
 import Kingfisher
+import SwiftUIIntrospect
 
 struct SalaScreen: View {
     let sessionId: String
@@ -13,7 +14,7 @@ struct SalaScreen: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 16) {
-                // Barra superior
+                // 🔝 Barra superior
                 HStack {
                     Text("Playlistify")
                         .font(.headline)
@@ -39,8 +40,8 @@ struct SalaScreen: View {
                     ProgressView().tint(.white)
                     Spacer()
                 } else {
-                    // 🔊 Reproduciendo ahora
                     VStack(alignment: .leading, spacing: 12) {
+                        // 🎶 Reproduciendo ahora
                         Text("Reproduciendo ahora:")
                             .font(.headline)
                             .foregroundColor(.white)
@@ -52,15 +53,14 @@ struct SalaScreen: View {
                                 .foregroundColor(.white.opacity(0.7))
                         }
 
-                        
-
+                        // 🎵 Título "En cola"
                         Text("En cola:")
                             .font(.headline)
                             .foregroundColor(.white)
                     }
                     .padding(.horizontal)
 
-                    // Solo esta parte es scrollable
+                    // 🎚️ Scroll SOLO para la cola
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(Array(canciones.dropFirst())) { c in
@@ -69,6 +69,11 @@ struct SalaScreen: View {
                         }
                         .padding(.horizontal)
                         .padding(.top, 4)
+                    }
+                    // 🧠 Desactiva el rebote cuando agregues introspect
+                    .introspect(.scrollView, on: .iOS(.v13, .v14, .v15, .v16, .v17)) { scrollView in
+                        scrollView.bounces = false
+                        scrollView.alwaysBounceVertical = false
                     }
                 }
 
