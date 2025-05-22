@@ -68,18 +68,30 @@ struct SalaScreen: View {
                     }
                     .padding(.horizontal)
 
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(Array(canciones.dropFirst())) { c in
-                                CardCancion(cancion: c)
+                    Group {
+                        if canciones.count > 4 {
+                            ScrollView {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(Array(canciones.dropFirst())) { c in
+                                        CardCancion(cancion: c)
+                                    }
+                                }
+                                .padding(.horizontal)
+                                .padding(.top, 4)
                             }
+                            .introspect(.scrollView, on: .iOS(.v13, .v14, .v15, .v16, .v17)) { scrollView in
+                                scrollView.bounces = false
+                                scrollView.alwaysBounceVertical = false
+                            }
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(Array(canciones.dropFirst())) { c in
+                                    CardCancion(cancion: c)
+                                }
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 4)
                         }
-                        .padding(.horizontal)
-                        .padding(.top, 4)
-                    }
-                    .introspect(.scrollView, on: .iOS(.v13, .v14, .v15, .v16, .v17)) { scrollView in
-                        scrollView.bounces = false
-                        scrollView.alwaysBounceVertical = false
                     }
                 }
 
@@ -96,7 +108,7 @@ struct SalaScreen: View {
                             .foregroundColor(.white)
                             .font(.title3)
                             .fontWeight(.bold)
-                            .frame(maxWidth: .infinity, alignment: .leading) // 👈 Alineación explícita
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.top, 12)
                             .padding(.horizontal)
 
