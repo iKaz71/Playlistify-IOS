@@ -257,6 +257,7 @@ struct SalaScreen: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             resultados.removeAll()
             isAdding = false
+            mostrarBuscador = false // ✅ Cierra el BottomSheet al terminar
         }
     }
 
