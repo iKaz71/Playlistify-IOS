@@ -1,6 +1,7 @@
 import SwiftUI
 import Kingfisher
 import SwiftUIIntrospect
+import FirebaseDatabase
 
 struct SalaScreen: View {
     let sessionId: String
@@ -8,11 +9,14 @@ struct SalaScreen: View {
     @State private var isLoading = true
     @State private var mostrarBuscador = false
 
-    //  Busqueda
+    // Busqueda
     @State private var query = ""
     @State private var resultados: [YouTubeVideoItem] = []
     @State private var isAdding = false
     @FocusState private var isFocused: Bool
+
+    // Código real de la sesión
+    @State private var codigoSesion: String = ""
 
     let rojoVivo = Color(red: 1, green: 0.2, blue: 0.3)
 
@@ -22,7 +26,7 @@ struct SalaScreen: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 16) {
-                //  Barra superior
+                // Barra superior
                 HStack {
                     Text("Playlistify")
                         .font(.headline)
@@ -44,6 +48,15 @@ struct SalaScreen: View {
                 .padding(.horizontal)
                 .padding(.top, 20)
                 .padding(.bottom, 10)
+
+                HStack {
+                    Text("Código: \(codigoSesion)")
+                        .foregroundColor(.white)
+                    Spacer()
+                    Text("Rol: Anfitrión")
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal)
 
                 if isLoading {
                     Spacer()
@@ -202,6 +215,11 @@ struct SalaScreen: View {
                     self.isLoading = false
                 }
             }
+            obtenerCodigoDeSesion(sessionId: sessionId) { codigo in
+                DispatchQueue.main.async {
+                    self.codigoSesion = codigo ?? "----"
+                }
+            }
         }
     }
 
@@ -239,6 +257,14 @@ struct SalaScreen: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             resultados.removeAll()
             isAdding = false
+        }
+    }
+
+    private func obtenerCodigoDeSesion(sessionId: String, completion: @escaping (String?) -> Void) {
+        let ref = Database.database().reference()
+        ref.child("sessions").child(sessionId).child("code").observeSingleEvent(of: .value) { snapshot in
+            let codigo = snapshot.value as? String
+            completion(codigo)
         }
     }
 }
