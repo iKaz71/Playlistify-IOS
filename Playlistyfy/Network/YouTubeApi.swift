@@ -10,7 +10,7 @@ struct YouTubeVideoItem: Identifiable, Decodable {
 
 final class YouTubeApi {
     static let shared = YouTubeApi()
-    
+
     private init() {
         if apiKey.isEmpty {
             fatalError("❌ La clave API no se cargó desde Info.plist.")
@@ -33,13 +33,15 @@ final class YouTubeApi {
         AF.request(url).responseDecodable(of: YouTubeSearchResponse.self) { response in
             switch response.result {
             case .success(let searchResponse):
-                let videoIds = searchResponse.items.map { $0.id.videoId }
+                // ✅ Filtrar los items con videoId válido
+                let validItems = searchResponse.items.filter { $0.id.videoId != nil }
+                let videoIds = validItems.compactMap { $0.id.videoId }
 
                 self.obtenerDetalles(videoIds: videoIds) { duracionesPorId in
-                    let videos: [YouTubeVideoItem] = searchResponse.items.compactMap { item in
-                        let id = item.id.videoId
-                        guard let duracion = duracionesPorId[id] else {
-                            print("⚠️ Duración no encontrada para id \(id)")
+                    let videos: [YouTubeVideoItem] = validItems.compactMap { item in
+                        guard let id = item.id.videoId,
+                              let duracion = duracionesPorId[id] else {
+                            print("⚠️ Video sin duración o sin ID válido")
                             return nil
                         }
 
@@ -51,6 +53,7 @@ final class YouTubeApi {
                         )
                     }
 
+                    print("📥 Resultados recibidos: \(videos.count)")
                     completion(videos)
                 }
 
@@ -62,6 +65,12 @@ final class YouTubeApi {
     }
 
     private func obtenerDetalles(videoIds: [String], completion: @escaping ([String: String]) -> Void) {
+        guard !videoIds.isEmpty else {
+            print("⚠️ No hay IDs válidos para consultar detalles")
+            completion([:])
+            return
+        }
+
         let ids = videoIds.joined(separator: ",")
         let url = "https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=\(ids)&key=\(apiKey)"
 

@@ -6,6 +6,7 @@ import FirebaseDatabase
 struct SalaScreen: View {
     let sessionId: String
     @State private var canciones: [Cancion] = []
+    @State private var cancionActual: Cancion? = nil
     @State private var isLoading = true
     @State private var mostrarBuscador = false
 
@@ -68,7 +69,7 @@ struct SalaScreen: View {
                             .font(.headline)
                             .foregroundColor(.white)
 
-                        if let actual = canciones.first {
+                        if let actual = cancionActual {
                             CardCancion(cancion: actual, incluirBoton: true)
                         } else {
                             Text("Sin canciones en cola")
@@ -81,11 +82,13 @@ struct SalaScreen: View {
                     }
                     .padding(.horizontal)
 
+                    let restantes = canciones.filter { $0.id != cancionActual?.id }
+
                     Group {
-                        if canciones.count > 4 {
+                        if restantes.count > 4 {
                             ScrollView {
                                 LazyVStack(spacing: 12) {
-                                    ForEach(Array(canciones.dropFirst())) { c in
+                                    ForEach(restantes) { c in
                                         CardCancion(cancion: c)
                                     }
                                 }
@@ -98,7 +101,7 @@ struct SalaScreen: View {
                             }
                         } else {
                             LazyVStack(spacing: 12) {
-                                ForEach(Array(canciones.dropFirst())) { c in
+                                ForEach(restantes) { c in
                                     CardCancion(cancion: c)
                                 }
                             }
@@ -215,6 +218,13 @@ struct SalaScreen: View {
                     self.isLoading = false
                 }
             }
+
+            FirebaseQueueManager.shared.escucharPlayback(sessionId: sessionId) { actual in
+                DispatchQueue.main.async {
+                    self.cancionActual = actual
+                }
+            }
+
             obtenerCodigoDeSesion(sessionId: sessionId) { codigo in
                 DispatchQueue.main.async {
                     self.codigoSesion = codigo ?? "----"
@@ -257,7 +267,7 @@ struct SalaScreen: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             resultados.removeAll()
             isAdding = false
-            mostrarBuscador = false // ✅ Cierra el BottomSheet al terminar
+            mostrarBuscador = false
         }
     }
 
@@ -304,7 +314,7 @@ private struct CardCancion: View {
 
             if incluirBoton {
                 Button(action: {
-                    // Reproducir playlist
+                    // Aquí irá la lógica de reproducción en el futuro
                 }) {
                     HStack {
                         Image(systemName: "play.fill")

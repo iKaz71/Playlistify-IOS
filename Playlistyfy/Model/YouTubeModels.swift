@@ -18,7 +18,7 @@ struct YouTubeSearchItem: Decodable {
 }
 
 struct YouTubeVideoId: Decodable {
-    let videoId: String
+    let videoId: String?
 }
 
 struct YouTubeSnippet: Decodable {

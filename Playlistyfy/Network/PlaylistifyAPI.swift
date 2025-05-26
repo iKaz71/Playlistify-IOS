@@ -6,6 +6,7 @@
 import Foundation
 import Alamofire
 import FirebaseDatabase
+import UIKit
 
 // MARK: - Cliente API central
 
@@ -145,22 +146,21 @@ final class PlaylistifyAPI {
 // MARK: - Extensión para decodificar caracteres HTML como &quot;
 extension String {
     var htmlDecoded: String {
-        guard let data = self.data(using: .utf8), !data.isEmpty else {
+        guard let data = self.data(using: .utf8) else { return self }
+
+        do {
+            let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+                .documentType: NSAttributedString.DocumentType.html,
+                .characterEncoding: String.Encoding.utf8.rawValue
+            ]
+
+            let attributed = try NSAttributedString(data: data, options: options, documentAttributes: nil)
+            return attributed.string
+        } catch {
+            print("❌ Error al decodificar HTML: \(error)")
             return self
         }
-
-        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-            .documentType: NSAttributedString.DocumentType.html,
-            .characterEncoding: String.Encoding.utf8.rawValue
-        ]
-
-        if let decoded = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
-            return decoded.string
-        }
-
-        return self
     }
-
 }
 
 

@@ -47,5 +47,28 @@ final class FirebaseQueueManager {
             }
         }
     }
+    
+    func escucharPlayback(sessionId: String, onUpdate: @escaping (Cancion?) -> Void) {
+        let ref = database.child("playbackState").child(sessionId).child("currentVideo")
+
+        ref.observe(.value) { snapshot in
+            guard let dict = snapshot.value as? [String: Any] else {
+                print("📥 Playback vacío")
+                onUpdate(nil)
+                return
+            }
+
+            let id = dict["id"] as? String ?? ""
+            let titulo = dict["titulo"] as? String ?? ""
+            let usuario = dict["usuario"] as? String ?? ""
+            let thumbnailUrl = dict["thumbnailUrl"] as? String ?? ""
+            let duration = dict["duration"] as? String ?? ""
+
+            let cancion = Cancion(id: id, titulo: titulo, thumbnailUrl: thumbnailUrl, usuario: usuario, duration: duration)
+            print("🎵 Playback actual: \(titulo.prefix(20))")
+            onUpdate(cancion)
+        }
+    }
+
 }
 
