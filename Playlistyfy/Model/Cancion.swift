@@ -6,7 +6,7 @@
 //
 import Foundation
 
-struct Cancion: Codable, Identifiable {
+struct Cancion: Codable, Identifiable, Equatable {
     let id: String
     let titulo: String
     let thumbnailUrl: String

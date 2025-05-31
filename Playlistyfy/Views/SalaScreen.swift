@@ -10,6 +10,7 @@ struct SalaScreen: View {
     @State private var cancionAEliminar: Cancion? = nil
     @State private var isLoading = true
     @State private var mostrarBuscador = false
+    @State private var isPressed = false
 
     // Busqueda
     @State private var query = ""
@@ -76,50 +77,71 @@ struct SalaScreen: View {
                             Text("Sin canciones en cola")
                                 .foregroundColor(.white.opacity(0.7))
                         }
-
-                        Text("En cola:")
-                            .font(.headline)
-                            .foregroundColor(.white)
                     }
                     .padding(.horizontal)
 
-                    // En tu body, justo donde muestras las canciones "En cola":
-                    let restantes = canciones.filter { $0.id != cancionActual?.id }
+                    
+                    // Sección "En cola" con List estilizado y swipe nativo
 
-                    List {
-                        ForEach(restantes) { c in
-                            CardCancion(cancion: c)
-                                .swipeActions(edge: .trailing) {
-                                    Button(role: .destructive) {
-                                        cancionAEliminar = c
-                                    } label: {
-                                        Label("Eliminar", systemImage: "trash")
-                                    }
-                                }
-                        }
-                    }
-                    .listStyle(.plain)
-                    .frame(maxHeight: 350) 
-                    .background(Color.clear)
-                    .alert(item: $cancionAEliminar) { cancion in
-                        Alert(
-                            title: Text("¿Eliminar canción?"),
-                            message: Text("¿Estás seguro de eliminar \"\(cancion.titulo)\" de la cola?"),
-                            primaryButton: .destructive(Text("Eliminar")) {
-                                if let index = canciones.firstIndex(where: { $0.id == cancion.id }) {
-                                    canciones.remove(at: index)
-                                    FirebaseQueueManager.shared.eliminarCancion(sessionId: sessionId, cancionId: cancion.id) { error in
-                                        if let error = error {
-                                            print("❌ Error al eliminar en Firebase: \(error.localizedDescription)")
-                                        } else {
-                                            print("✅ Canción eliminada de Firebase")
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("En cola:")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal)
+
+                        let restantes = canciones.filter { $0.id != cancionActual?.id }
+
+                        List {
+                            ForEach(restantes) { c in
+                                CardCancionEnCola(cancion: c)
+                                    .padding(.vertical, 9)
+                                    .padding(.horizontal, 8)
+                                    .frame(maxWidth: .infinity)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                            .fill(Color.white.opacity(0.10))
+                                            .shadow(color: .black.opacity(0.13), radius: 7, x: 0, y: 2)
+                                    )
+                                    .listRowInsets(EdgeInsets())
+                                    .swipeActions(edge: .trailing) {
+                                        Button(role: .destructive) {
+                                            cancionAEliminar = c
+                                        } label: {
+                                            Label("Eliminar", systemImage: "trash")
                                         }
                                     }
-                                }
-                            },
-                            secondaryButton: .cancel()
-                        )
+                            }
+                            .listRowSeparator(.hidden)
+                        }
+                        .listStyle(.plain)
+                        .frame(maxHeight: 420)
+                        .background(Color.black.opacity(0.05))
+                        .cornerRadius(28)
+                        .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 80 : 0)
+                        .animation(.spring(), value: canciones)
+                        .alert(item: $cancionAEliminar) { cancion in
+                            Alert(
+                                title: Text("¿Eliminar canción?"),
+                                message: Text("¿Estás seguro de eliminar \"\(cancion.titulo)\" de la cola?"),
+                                primaryButton: .destructive(Text("Eliminar")) {
+                                    if let index = canciones.firstIndex(where: { $0.id == cancion.id }) {
+                                        withAnimation {
+                                            canciones.remove(at: index)
+                                        }
+                                        FirebaseQueueManager.shared.eliminarCancion(sessionId: sessionId, cancionId: cancion.id) { error in
+                                            if let error = error {
+                                                print("❌ Error al eliminar en Firebase: \(error.localizedDescription)")
+                                            } else {
+                                                print("✅ Canción eliminada de Firebase")
+                                            }
+                                        }
+                                    }
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        }
                     }
+
 
 
                 }
@@ -293,7 +315,7 @@ struct SalaScreen: View {
     }
 }
 
-// ---- CardCancion ----
+// ---- CardCancion principal (para "Reproduciendo ahora") ----
 
 private struct CardCancion: View {
     let cancion: Cancion
@@ -312,7 +334,8 @@ private struct CardCancion: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(cancion.titulo)
                         .foregroundColor(.white)
-                        .fontWeight(.semibold)
+                        .fontWeight(.bold)
+                        .font(.title3)
                         .lineLimit(1)
 
                     Text("Agregado por: \(cancion.usuario)")
@@ -325,6 +348,7 @@ private struct CardCancion: View {
                 Text(formatDuration(cancion.duration))
                     .foregroundColor(.white.opacity(0.6))
                     .font(.caption)
+                    .fontWeight(.bold)
             }
 
             if incluirBoton {
@@ -339,14 +363,87 @@ private struct CardCancion: View {
                     .foregroundColor(.white)
                     .padding(.vertical, 10)
                     .frame(maxWidth: .infinity)
-                    .background(Color.red)
+                    .background(Color(red: 1, green: 0.2, blue: 0.3))
                     .cornerRadius(10)
                 }
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(12)
+        .background(Color.white.opacity(0.10))
+        .cornerRadius(16)
     }
 }
+
+// ---- CardCancion para la cola (para dar más look de lista y poder tunear aparte) ----
+
+import SwiftUI
+import Kingfisher
+
+struct CardCancionEnCola: View {
+    let cancion: Cancion
+
+    // Efecto de tap visual (escala)
+    @State private var isPressed = false
+
+    var body: some View {
+        HStack(spacing: 16) {
+            KFImage(URL(string: cancion.thumbnailUrl))
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 58, height: 38)
+                .cornerRadius(11)
+                .shadow(color: .black.opacity(0.18), radius: 3, x: 0, y: 2)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(cancion.titulo)
+                    .foregroundColor(.white)
+                    .font(.system(size: 17, weight: .semibold))
+                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    Image(systemName: "person.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.7))
+                    Text(cancion.usuario)
+                        .foregroundColor(.white.opacity(0.8))
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.18))
+                        .cornerRadius(7)
+                }
+            }
+            Spacer()
+            Text(formatDuration(cancion.duration))
+                .foregroundColor(.white.opacity(0.92))
+                .font(.system(size: 15, weight: .bold))
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 12)
+        .background(
+            // Fondo tipo glass o blur (puedes cambiar ultraThinMaterial por Color.white.opacity(0.12) si no quieres blur)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .background(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.20),
+                                Color(red: 1, green: 0.2, blue: 0.3).opacity(0.08)
+                            ],
+                            startPoint: .topLeading, endPoint: .bottomTrailing
+                        ), lineWidth: 1.1)
+                )
+                .shadow(color: Color.white.opacity(0.10), radius: 7, x: 0, y: 2)
+        )
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.easeInOut(duration: 0.14), value: isPressed)
+        .onTapGesture {
+            isPressed = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.13) {
+                isPressed = false
+            }
+        }
+    }
+}
+
 
