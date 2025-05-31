@@ -7,6 +7,7 @@ struct SalaScreen: View {
     let sessionId: String
     @State private var canciones: [Cancion] = []
     @State private var cancionActual: Cancion? = nil
+    @State private var cancionAEliminar: Cancion? = nil
     @State private var isLoading = true
     @State private var mostrarBuscador = false
 
@@ -82,33 +83,45 @@ struct SalaScreen: View {
                     }
                     .padding(.horizontal)
 
+                    // En tu body, justo donde muestras las canciones "En cola":
                     let restantes = canciones.filter { $0.id != cancionActual?.id }
 
-                    Group {
-                        if restantes.count > 4 {
-                            ScrollView {
-                                LazyVStack(spacing: 12) {
-                                    ForEach(restantes) { c in
-                                        CardCancion(cancion: c)
+                    List {
+                        ForEach(restantes) { c in
+                            CardCancion(cancion: c)
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        cancionAEliminar = c
+                                    } label: {
+                                        Label("Eliminar", systemImage: "trash")
                                     }
                                 }
-                                .padding(.horizontal)
-                                .padding(.top, 4)
-                            }
-                            .introspect(.scrollView, on: .iOS(.v13, .v14, .v15, .v16, .v17)) { scrollView in
-                                scrollView.bounces = false
-                                scrollView.alwaysBounceVertical = false
-                            }
-                        } else {
-                            LazyVStack(spacing: 12) {
-                                ForEach(restantes) { c in
-                                    CardCancion(cancion: c)
-                                }
-                            }
-                            .padding(.horizontal)
-                            .padding(.top, 4)
                         }
                     }
+                    .listStyle(.plain)
+                    .frame(maxHeight: 350) 
+                    .background(Color.clear)
+                    .alert(item: $cancionAEliminar) { cancion in
+                        Alert(
+                            title: Text("¿Eliminar canción?"),
+                            message: Text("¿Estás seguro de eliminar \"\(cancion.titulo)\" de la cola?"),
+                            primaryButton: .destructive(Text("Eliminar")) {
+                                if let index = canciones.firstIndex(where: { $0.id == cancion.id }) {
+                                    canciones.remove(at: index)
+                                    FirebaseQueueManager.shared.eliminarCancion(sessionId: sessionId, cancionId: cancion.id) { error in
+                                        if let error = error {
+                                            print("❌ Error al eliminar en Firebase: \(error.localizedDescription)")
+                                        } else {
+                                            print("✅ Canción eliminada de Firebase")
+                                        }
+                                    }
+                                }
+                            },
+                            secondaryButton: .cancel()
+                        )
+                    }
+
+
                 }
 
                 Spacer(minLength: 8)
@@ -279,6 +292,8 @@ struct SalaScreen: View {
         }
     }
 }
+
+// ---- CardCancion ----
 
 private struct CardCancion: View {
     let cancion: Cancion

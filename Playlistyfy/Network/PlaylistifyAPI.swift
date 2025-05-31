@@ -146,21 +146,28 @@ final class PlaylistifyAPI {
 // MARK: - Extensión para decodificar caracteres HTML como &quot;
 extension String {
     var htmlDecoded: String {
-        guard let data = self.data(using: .utf8) else { return self }
-
-        do {
+        // Solo decodificamos si contiene signos de HTML - :v aun debemos validar todos los posibles titulos de youtube como skillet con caracteres extraños en el mejor de los caso se ve mal si no truena
+        if self.contains("<") && self.contains(">") {
+            guard let data = self.data(using: .utf8) else { return self }
             let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
                 .documentType: NSAttributedString.DocumentType.html,
                 .characterEncoding: String.Encoding.utf8.rawValue
             ]
-
-            let attributed = try NSAttributedString(data: data, options: options, documentAttributes: nil)
-            return attributed.string
-        } catch {
-            print("❌ Error al decodificar HTML: \(error)")
+            if let attributed = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
+                return attributed.string
+            } else {
+                print("❌ Error al decodificar HTML en string: \(self)")
+                return self
+            }
+        } else {
+            // Retornamos el string original si no es HTML
             return self
         }
     }
 }
+
+
+
+
 
 

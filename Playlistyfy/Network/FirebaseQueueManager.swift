@@ -15,7 +15,7 @@ final class FirebaseQueueManager {
     private init() {}
 
     func escucharCola(sessionId: String, onUpdate: @escaping ([Cancion]) -> Void) {
-        let ref = database.child("queues").child(sessionId)  // ✅ Nodo correcto usado por Android y TV
+        let ref = database.child("queues").child(sessionId)  
 
         ref.observe(.value) { snapshot in
             print("📥 Snapshot recibido: \(snapshot.value ?? "sin datos")")
@@ -67,6 +67,23 @@ final class FirebaseQueueManager {
             let cancion = Cancion(id: id, titulo: titulo, thumbnailUrl: thumbnailUrl, usuario: usuario, duration: duration)
             print("🎵 Playback actual: \(titulo.prefix(20))")
             onUpdate(cancion)
+        }
+    }
+    
+    func eliminarCancion(sessionId: String, cancionId: String, completion: ((Error?) -> Void)? = nil) {
+        let ref = database.child("queues").child(sessionId)
+        ref.observeSingleEvent(of: .value) { snapshot in
+            for child in snapshot.children {
+                if let snap = child as? DataSnapshot,
+                   let dict = snap.value as? [String: Any],
+                   let songId = dict["id"] as? String,
+                   songId == cancionId {
+                    snap.ref.removeValue { error, _ in
+                        completion?(error)
+                    }
+                    break
+                }
+            }
         }
     }
 
