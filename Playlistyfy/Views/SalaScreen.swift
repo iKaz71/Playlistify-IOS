@@ -108,8 +108,13 @@ struct SalaScreen: View {
                                     .listRowInsets(EdgeInsets())
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
-                                            cancionAEliminar = c
+                                            print("🟠 Botón eliminar presionado para pushKey:", pushKey)
                                             pushKeyAEliminar = pushKey
+                                            // Fuerza el refresh del alert:
+                                            cancionAEliminar = nil
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                                cancionAEliminar = c
+                                            }
                                         } label: {
                                             Label("Eliminar", systemImage: "trash")
                                         }
@@ -135,16 +140,22 @@ struct SalaScreen: View {
                         .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 80 : 0)
                         .animation(.spring(), value: cancionesDict)
                         .alert(item: $cancionAEliminar) { cancion in
-                            Alert(
+                            print("🟡 Alert mostrado para pushKey:", pushKeyAEliminar ?? "-")
+                            return Alert(
                                 title: Text("¿Eliminar canción?"),
                                 message: Text("¿Estás seguro de eliminar \"\(cancion.titulo)\" de la cola?"),
                                 primaryButton: .destructive(Text("Eliminar")) {
+                                    print("🟢 Confirmando eliminación en alert para pushKey:", pushKeyAEliminar ?? "-")
                                     if let pushKey = pushKeyAEliminar {
-                                        FirebaseQueueManager.shared.eliminarCancion(sessionId: sessionId, pushKey: pushKey) { error in
+                                        PlaylistifyAPI.shared.eliminarCancion(
+                                            sessionId: sessionId,
+                                            pushKey: pushKey,
+                                            userId: "iOS"
+                                        ) { error in
                                             if let error = error {
-                                                print("❌ Error al eliminar en Firebase: \(error.localizedDescription)")
+                                                print("❌ Error al eliminar: \(error.localizedDescription)")
                                             } else {
-                                                print("✅ Canción eliminada de Firebase")
+                                                print("✅ Eliminada correctamente")
                                             }
                                         }
                                     }
@@ -152,18 +163,7 @@ struct SalaScreen: View {
                                 secondaryButton: .cancel()
                             )
                         }
-                        .alert(item: $cancionAPlayNext) { cancion in
-                            Alert(
-                                title: Text("¿Reproducir a continuación?"),
-                                message: Text("¿Seguro que quieres que \"\(cancion.titulo)\" sea la siguiente canción en reproducirse?"),
-                                primaryButton: .default(Text("Sí, siguiente")) {
-                                    if let pushKey = pushKeyAPlayNext {
-                                        //PlaylistifyAPI.shared.playNext(sessionId: sessionId, pushKey: pushKey)
-                                    }
-                                },
-                                secondaryButton: .cancel()
-                            )
-                        }
+
                     }
                 }
                 Spacer(minLength: 8)
@@ -324,7 +324,7 @@ struct SalaScreen: View {
         })
     }
 
-    // Devuelve las canciones en cola en el orden correcto y con el pushKey
+    // Devuelvemos las canciones en cola en el orden correcto y con el pushKey
     private func obtenerEnCola() -> [(String, Cancion)] {
         ordenCanciones.compactMap { pushKey in
             guard let c = cancionesDict[pushKey] else { return nil }

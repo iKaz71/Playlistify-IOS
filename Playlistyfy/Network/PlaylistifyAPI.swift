@@ -139,7 +139,39 @@ final class PlaylistifyAPI {
     }
     
     //------------------------------------------------------------------------//
-    //  (Opcional: legacy) Firebase listener en tiempo real 
+    //  POST /queue/remove  →  Eliminar canción de la cola
+    //------------------------------------------------------------------------//
+    func eliminarCancion(sessionId: String, pushKey: String, userId: String = "iOS", completion: @escaping (Error?) -> Void) {
+        let url = "https://playlistify-api-production.up.railway.app/queue/remove"
+        let parametros: [String: String] = [
+            "sessionId": sessionId,
+            "pushKey": pushKey,
+            "userId": userId
+        ]
+        AF.request(
+            url,
+            method: .post,
+            parameters: parametros,
+            encoding: JSONEncoding.default,
+            headers: [.contentType("application/json")]
+        )
+        .validate()
+        .response { response in
+            if let error = response.error {
+                print("❌ Error al eliminar canción: \(error)")
+                completion(error)
+            } else {
+                print("✅ Canción eliminada exitosamente")
+                completion(nil)
+            }
+        }
+    }
+
+    
+    
+    
+    //------------------------------------------------------------------------//
+    //  (legacy) Firebase listener en tiempo real
     //------------------------------------------------------------------------//
     func escucharCola(sessionId: String, onUpdate: @escaping ([Cancion]) -> Void) {
         let ref = Database.database().reference()
@@ -172,7 +204,7 @@ final class PlaylistifyAPI {
     }
 
     //------------------------------------------------------------------------//
-    //  (Opcional: legacy) POST /queue/playnext  →  Playnext (dejar comentado)
+    //  (legacy) POST /queue/playnext  →  Playnext 
     //------------------------------------------------------------------------//
     /*
     func playNext(sessionId: String, pushKey: String) {
