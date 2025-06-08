@@ -19,6 +19,8 @@ struct SalaScreen: View {
     @State private var mostrarBuscador = false
     @State private var cancionAPlayNext: Cancion? = nil
     @State private var pushKeyAPlayNext: String? = nil
+    
+
 
     // Búsqueda
     @State private var query = ""
@@ -110,7 +112,7 @@ struct SalaScreen: View {
                                         Button(role: .destructive) {
                                             print("🟠 Botón eliminar presionado para pushKey:", pushKey)
                                             pushKeyAEliminar = pushKey
-                                            // Fuerza el refresh del alert:
+                                            // Forzamos el refresh del alert:
                                             cancionAEliminar = nil
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                                                 cancionAEliminar = c
@@ -122,14 +124,19 @@ struct SalaScreen: View {
                                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                         if index > 0 {
                                             Button {
-                                                cancionAPlayNext = c
+                                                // Forzamos el refresh del alert: :v
                                                 pushKeyAPlayNext = pushKey
+                                                cancionAPlayNext = nil
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                                    cancionAPlayNext = c
+                                                }
                                             } label: {
-                                                Label("Siguiente", systemImage: "arrow.down.to.line")
+                                                Label("Siguiente", systemImage: "chevron.up.2")
                                             }
                                             .tint(Color.yellow.opacity(0.85))
                                         }
                                     }
+
                             }
                             .listRowSeparator(.hidden)
                         }
@@ -163,6 +170,28 @@ struct SalaScreen: View {
                                 secondaryButton: .cancel()
                             )
                         }
+                        .alert(item: $cancionAPlayNext) { cancion in
+                            Alert(
+                                title: Text("¿Reproducir a continuación?"),
+                                message: Text("¿Seguro que quieres que \"\(cancion.titulo)\" sea la siguiente canción en reproducirse?"),
+                                primaryButton: .default(Text("Sí, siguiente")) {
+                                    if let pushKey = pushKeyAPlayNext {
+                                        PlaylistifyAPI.shared.playNext(
+                                            sessionId: sessionId,
+                                            pushKey: pushKey
+                                        ) { error in
+                                            if let error = error {
+                                                print("❌ Error al mover a Play Next: \(error.localizedDescription)")
+                                            } else {
+                                                print("✅ Canción movida a Play Next")
+                                            }
+                                        }
+                                    }
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        }
+
 
                     }
                 }
@@ -282,12 +311,12 @@ struct SalaScreen: View {
 
     // -- FUNCIONES PRIVADAS --
 
-    // Leer objeto y array de orden, y sincronizar la lista en la UI
+    // Leemos objeto y array de orden, y sincronizamos la lista en la UI
     private func escucharColaYOrden() {
         let refCola = Database.database().reference().child("queues").child(sessionId)
         let refOrden = Database.database().reference().child("queuesOrder").child(sessionId)
 
-        // Escuchar el objeto de canciones
+        // Escuchamos el objeto de canciones
         refCola.observe(.value, with: { snapshot in
             let value = snapshot.value as? [String: Any] ?? [:]
             var nuevasCancionesDict: [String: Cancion] = [:]
@@ -314,7 +343,7 @@ struct SalaScreen: View {
             }
         })
 
-        // Escuchar el array de orden
+        // Escuchamos el array de orden
         refOrden.observe(.value, with: { snapshot in
             let orden = snapshot.value as? [String] ?? []
             DispatchQueue.main.async {

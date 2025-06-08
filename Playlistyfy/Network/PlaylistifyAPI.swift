@@ -90,7 +90,7 @@ final class PlaylistifyAPI {
     }
 
     //------------------------------------------------------------------------//
-    //  NUEVO: Obtener la cola ordenada para la UI
+    //  NUEVO: Obtenemos la cola ordenada para la UI
     //------------------------------------------------------------------------//
     func obtenerColaOrdenada(sessionId: String, completion: @escaping ([Cancion]) -> Void) {
         obtenerDiccionarioCola(sessionId: sessionId) { cancionesDict in
@@ -102,7 +102,7 @@ final class PlaylistifyAPI {
     }
 
     //------------------------------------------------------------------------//
-    //  POST /queue/add  →  Agregar canción a la cola
+    //  POST /queue/add  →  Agrega canción a la cola
     //------------------------------------------------------------------------//
     func agregarCancion(sessionId: String, cancion: Cancion) {
         let url = "https://playlistify-api-production.up.railway.app/queue/add"
@@ -204,10 +204,9 @@ final class PlaylistifyAPI {
     }
 
     //------------------------------------------------------------------------//
-    //  (legacy) POST /queue/playnext  →  Playnext 
+    //  POST /queue/playnext  →  Mover canción como siguiente en la cola
     //------------------------------------------------------------------------//
-    /*
-    func playNext(sessionId: String, pushKey: String) {
+    func playNext(sessionId: String, pushKey: String, completion: ((Error?) -> Void)? = nil) {
         let url = "https://playlistify-api-production.up.railway.app/queue/playnext"
         let parametros: [String: String] = [
             "sessionId": sessionId,
@@ -224,12 +223,13 @@ final class PlaylistifyAPI {
         .response { response in
             if let error = response.error {
                 print("❌ Error al mover canción a Play Next: \(error)")
+                completion?(error)
             } else {
                 print("✅ Canción movida a Play Next")
+                completion?(nil)
             }
         }
     }
-    */
 }
 
 // MARK: - Extensión para decodificar caracteres HTML como &quot;
