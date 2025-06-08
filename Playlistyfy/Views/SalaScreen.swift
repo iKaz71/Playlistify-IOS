@@ -1,3 +1,8 @@
+//
+//  SalaScreen.swift
+//  Playlistyfy
+//
+
 import SwiftUI
 import Kingfisher
 import SwiftUIIntrospect
@@ -5,19 +10,23 @@ import FirebaseDatabase
 
 struct SalaScreen: View {
     let sessionId: String
-    @State private var canciones: [Cancion] = []
+    @State private var cancionesDict: [String: Cancion] = [:]
+    @State private var ordenCanciones: [String] = []
     @State private var cancionActual: Cancion? = nil
     @State private var cancionAEliminar: Cancion? = nil
+    @State private var pushKeyAEliminar: String? = nil
     @State private var isLoading = true
     @State private var mostrarBuscador = false
+    @State private var cancionAPlayNext: Cancion? = nil
+    @State private var pushKeyAPlayNext: String? = nil
 
-    // Busqueda
+    // Búsqueda
     @State private var query = ""
     @State private var resultados: [YouTubeVideoItem] = []
     @State private var isAdding = false
     @FocusState private var isFocused: Bool
 
-    // Codigo de la sesión
+    // Código de la sesión
     @State private var codigoSesion: String = ""
 
     let rojoVivo = Color(red: 1, green: 0.2, blue: 0.3)
@@ -86,20 +95,34 @@ struct SalaScreen: View {
                             .foregroundColor(.white)
                             .padding(.horizontal)
 
-                        let restantes = canciones.filter { $0.id != cancionActual?.id }
+                        // 💡 Se muestran las canciones en el orden del array de pushKeys
+                        let enCola: [(String, Cancion)] = obtenerEnCola()
 
                         List {
-                            ForEach(restantes) { c in
+                            ForEach(enCola.indices, id: \.self) { index in
+                                let (pushKey, c) = enCola[index]
                                 CardCancionEnCola(cancion: c)
-                                    .padding(.vertical, 9)
-                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .padding(.horizontal, 4)
                                     .frame(maxWidth: .infinity)
                                     .listRowInsets(EdgeInsets())
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
                                             cancionAEliminar = c
+                                            pushKeyAEliminar = pushKey
                                         } label: {
                                             Label("Eliminar", systemImage: "trash")
+                                        }
+                                    }
+                                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                                        if index > 0 {
+                                            Button {
+                                                cancionAPlayNext = c
+                                                pushKeyAPlayNext = pushKey
+                                            } label: {
+                                                Label("Siguiente", systemImage: "arrow.down.to.line")
+                                            }
+                                            .tint(Color.yellow.opacity(0.85))
                                         }
                                     }
                             }
@@ -107,26 +130,35 @@ struct SalaScreen: View {
                         }
                         .listStyle(.plain)
                         .frame(maxHeight: 420)
-                        .background(fondoOscuro) 
+                        .background(fondoOscuro)
                         .cornerRadius(28)
                         .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 80 : 0)
-                        .animation(.spring(), value: canciones)
+                        .animation(.spring(), value: cancionesDict)
                         .alert(item: $cancionAEliminar) { cancion in
                             Alert(
                                 title: Text("¿Eliminar canción?"),
                                 message: Text("¿Estás seguro de eliminar \"\(cancion.titulo)\" de la cola?"),
                                 primaryButton: .destructive(Text("Eliminar")) {
-                                    if let index = canciones.firstIndex(where: { $0.id == cancion.id }) {
-                                        withAnimation {
-                                            canciones.remove(at: index)
-                                        }
-                                        FirebaseQueueManager.shared.eliminarCancion(sessionId: sessionId, cancionId: cancion.id) { error in
+                                    if let pushKey = pushKeyAEliminar {
+                                        FirebaseQueueManager.shared.eliminarCancion(sessionId: sessionId, pushKey: pushKey) { error in
                                             if let error = error {
                                                 print("❌ Error al eliminar en Firebase: \(error.localizedDescription)")
                                             } else {
                                                 print("✅ Canción eliminada de Firebase")
                                             }
                                         }
+                                    }
+                                },
+                                secondaryButton: .cancel()
+                            )
+                        }
+                        .alert(item: $cancionAPlayNext) { cancion in
+                            Alert(
+                                title: Text("¿Reproducir a continuación?"),
+                                message: Text("¿Seguro que quieres que \"\(cancion.titulo)\" sea la siguiente canción en reproducirse?"),
+                                primaryButton: .default(Text("Sí, siguiente")) {
+                                    if let pushKey = pushKeyAPlayNext {
+                                        //PlaylistifyAPI.shared.playNext(sessionId: sessionId, pushKey: pushKey)
                                     }
                                 },
                                 secondaryButton: .cancel()
@@ -234,23 +266,72 @@ struct SalaScreen: View {
             }
         }
         .onAppear {
-            FirebaseQueueManager.shared.escucharCola(sessionId: sessionId) { lista in
-                DispatchQueue.main.async {
-                    self.canciones = lista
-                    self.isLoading = false
-                }
-            }
-
+            escucharColaYOrden()
             FirebaseQueueManager.shared.escucharPlayback(sessionId: sessionId) { actual in
                 DispatchQueue.main.async {
                     self.cancionActual = actual
                 }
             }
-
             obtenerCodigoDeSesion(sessionId: sessionId) { codigo in
                 DispatchQueue.main.async {
                     self.codigoSesion = codigo ?? "----"
                 }
+            }
+        }
+    }
+
+    // -- FUNCIONES PRIVADAS --
+
+    // Leer objeto y array de orden, y sincronizar la lista en la UI
+    private func escucharColaYOrden() {
+        let refCola = Database.database().reference().child("queues").child(sessionId)
+        let refOrden = Database.database().reference().child("queuesOrder").child(sessionId)
+
+        // Escuchar el objeto de canciones
+        refCola.observe(.value, with: { snapshot in
+            let value = snapshot.value as? [String: Any] ?? [:]
+            var nuevasCancionesDict: [String: Cancion] = [:]
+            for (pushKey, data) in value {
+                if let dict = data as? [String: Any],
+                   let id = dict["id"] as? String,
+                   let titulo = dict["titulo"] as? String,
+                   let usuario = dict["usuario"] as? String,
+                   let thumbnailUrl = dict["thumbnailUrl"] as? String,
+                   let duration = dict["duration"] as? String {
+                    let cancion = Cancion(
+                        videoId: id,
+                        pushKey: pushKey,
+                        titulo: titulo,
+                        thumbnailUrl: thumbnailUrl,
+                        usuario: usuario,
+                        duration: duration
+                    )
+                    nuevasCancionesDict[pushKey] = cancion
+                }
+            }
+            DispatchQueue.main.async {
+                self.cancionesDict = nuevasCancionesDict
+            }
+        })
+
+        // Escuchar el array de orden
+        refOrden.observe(.value, with: { snapshot in
+            let orden = snapshot.value as? [String] ?? []
+            DispatchQueue.main.async {
+                self.ordenCanciones = orden
+                self.isLoading = false
+            }
+        })
+    }
+
+    // Devuelve las canciones en cola en el orden correcto y con el pushKey
+    private func obtenerEnCola() -> [(String, Cancion)] {
+        ordenCanciones.compactMap { pushKey in
+            guard let c = cancionesDict[pushKey] else { return nil }
+            if cancionActual == nil || c.videoId != cancionActual?.videoId {
+                return (pushKey, c)
+            } else {
+                return nil
             }
         }
     }
@@ -275,7 +356,8 @@ struct SalaScreen: View {
         isAdding = true
 
         let nueva = Cancion(
-            id: cancion.id,
+            videoId: cancion.id,
+            pushKey: nil,
             titulo: cancion.titulo.htmlDecoded,
             thumbnailUrl: cancion.thumbnailUrl,
             usuario: "iOS",
@@ -299,6 +381,4 @@ struct SalaScreen: View {
         }
     }
 }
-
-
 

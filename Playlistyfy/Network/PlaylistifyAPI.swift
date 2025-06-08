@@ -8,6 +8,7 @@ import Alamofire
 import FirebaseDatabase
 import UIKit
 
+
 // MARK: - Cliente API central
 
 final class PlaylistifyAPI {
@@ -39,63 +40,64 @@ final class PlaylistifyAPI {
     }
 
     //------------------------------------------------------------------------//
-    //  GET /session/:id  →  Canciones en la cola
+    //  GET /queue/:sessionId  →  Diccionario de canciones
     //------------------------------------------------------------------------//
-    func obtenerCola(sessionId: String,
-                     completion: @escaping ([Cancion]) -> Void)
-    {
-        let cleanId = sessionId.trimmingCharacters(in: .whitespacesAndNewlines)
-        print("🧪 sessionId recibido:", cleanId)
-
-        let url = "https://playlistify-api-production.up.railway.app/session/\(cleanId)"
-        print("➡️  GET \(url)")
-
+    func obtenerDiccionarioCola(sessionId: String, completion: @escaping ([String: Cancion]) -> Void) {
+        let url = "https://playlistify-api-production.up.railway.app/queue/\(sessionId)"
         AF.request(url)
             .validate()
-            .responseDecodable(of: SessionDetailResponse.self) { resp in
+            .responseJSON { resp in
                 switch resp.result {
                 case .success(let data):
-                    let canciones = data.queue?.values.map { $0 } ?? []
-                    completion(canciones)
-                case .failure(let err):
-                    print("❌ obtenerCola:", err)
+                    if let dict = data as? [String: [String: Any]] {
+                        var cancionesDict: [String: Cancion] = [:]
+                        for (key, value) in dict {
+                            if let cancion = Cancion.from(dictionary: value, pushKey: key) {
+                                cancionesDict[key] = cancion
+                            }
+                        }
+                        completion(cancionesDict)
+                    } else {
+                        completion([:])
+                    }
+                case .failure(let error):
+                    print("❌ obtenerDiccionarioCola:", error)
+                    completion([:])
+                }
+            }
+    }
+
+    //------------------------------------------------------------------------//
+    //  GET /queueOrder/:sessionId  →  Array de orden
+    //------------------------------------------------------------------------//
+    func obtenerOrdenCola(sessionId: String, completion: @escaping ([String]) -> Void) {
+        let url = "https://playlistify-api-production.up.railway.app/queueOrder/\(sessionId)"
+        AF.request(url)
+            .validate()
+            .responseJSON { resp in
+                switch resp.result {
+                case .success(let data):
+                    if let arr = data as? [String] {
+                        completion(arr)
+                    } else {
+                        completion([])
+                    }
+                case .failure(let error):
+                    print("❌ obtenerOrdenCola:", error)
                     completion([])
                 }
             }
     }
 
     //------------------------------------------------------------------------//
-    //  Firebase listener para tiempo real
+    //  NUEVO: Obtener la cola ordenada para la UI
     //------------------------------------------------------------------------//
-    func escucharCola(sessionId: String, onUpdate: @escaping ([Cancion]) -> Void) {
-        let ref = Database.database().reference()
-            .child("sessions")
-            .child(sessionId)
-            .child("queue")
-
-        ref.observe(.value) { snapshot in
-            var canciones: [Cancion] = []
-
-            for child in snapshot.children {
-                if let snap = child as? DataSnapshot,
-                   let dict = snap.value as? [String: Any] {
-                    let id = dict["id"] as? String ?? ""
-                    let titulo = dict["titulo"] as? String ?? ""
-                    let usuario = dict["usuario"] as? String ?? ""
-                    let thumbnailUrl = dict["thumbnailUrl"] as? String ?? ""
-                    let duration = dict["duration"] as? String ?? ""
-
-                    canciones.append(Cancion(
-                        id: id,
-                        titulo: titulo,
-                        thumbnailUrl: thumbnailUrl,
-                        usuario: usuario,
-                        duration: duration
-                    ))
-                }
+    func obtenerColaOrdenada(sessionId: String, completion: @escaping ([Cancion]) -> Void) {
+        obtenerDiccionarioCola(sessionId: sessionId) { cancionesDict in
+            self.obtenerOrdenCola(sessionId: sessionId) { orden in
+                let cancionesOrdenadas = orden.compactMap { cancionesDict[$0] }
+                completion(cancionesOrdenadas)
             }
-
-            onUpdate(canciones)
         }
     }
 
@@ -115,10 +117,8 @@ final class PlaylistifyAPI {
             "thumbnailUrl": cancion.thumbnailUrl,
             "usuario": cancion.usuario,
             "duration": cancion.duration
-
         ]
         print("✅ Enviando duración ISO ya calculada:", cancion.duration)
-
         print("📤 Intentando agregar canción con parámetros:", parametros)
 
         AF.request(
@@ -137,16 +137,72 @@ final class PlaylistifyAPI {
             }
         }
     }
+    
+    //------------------------------------------------------------------------//
+    //  (Opcional: legacy) Firebase listener en tiempo real 
+    //------------------------------------------------------------------------//
+    func escucharCola(sessionId: String, onUpdate: @escaping ([Cancion]) -> Void) {
+        let ref = Database.database().reference()
+            .child("queues")
+            .child(sessionId)
+
+        ref.observe(.value, with: { snapshot in
+            var canciones: [Cancion] = []
+            for child in snapshot.children {
+                if let snap = child as? DataSnapshot,
+                   let dict = snap.value as? [String: Any] {
+                    let id = dict["id"] as? String ?? ""
+                    let titulo = dict["titulo"] as? String ?? ""
+                    let usuario = dict["usuario"] as? String ?? ""
+                    let thumbnailUrl = dict["thumbnailUrl"] as? String ?? ""
+                    let duration = dict["duration"] as? String ?? ""
+                    let pushKey = snap.key
+                    canciones.append(Cancion(
+                        videoId: id,
+                        pushKey: pushKey,
+                        titulo: titulo,
+                        thumbnailUrl: thumbnailUrl,
+                        usuario: usuario,
+                        duration: duration
+                    ))
+                }
+            }
+            onUpdate(canciones)
+        })
+    }
+
+    //------------------------------------------------------------------------//
+    //  (Opcional: legacy) POST /queue/playnext  →  Playnext (dejar comentado)
+    //------------------------------------------------------------------------//
+    /*
+    func playNext(sessionId: String, pushKey: String) {
+        let url = "https://playlistify-api-production.up.railway.app/queue/playnext"
+        let parametros: [String: String] = [
+            "sessionId": sessionId,
+            "pushKey": pushKey
+        ]
+        AF.request(
+            url,
+            method: .post,
+            parameters: parametros,
+            encoding: JSONEncoding.default,
+            headers: [.contentType("application/json")]
+        )
+        .validate()
+        .response { response in
+            if let error = response.error {
+                print("❌ Error al mover canción a Play Next: \(error)")
+            } else {
+                print("✅ Canción movida a Play Next")
+            }
+        }
+    }
+    */
 }
-
-
-
-
 
 // MARK: - Extensión para decodificar caracteres HTML como &quot;
 extension String {
     var htmlDecoded: String {
-        // Solo decodificamos si contiene signos de HTML - :v aun debemos validar todos los posibles titulos de youtube como skillet con caracteres extraños en el mejor de los caso se ve mal si no truena
         if self.contains("<") && self.contains(">") {
             guard let data = self.data(using: .utf8) else { return self }
             let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
@@ -160,14 +216,8 @@ extension String {
                 return self
             }
         } else {
-            // Retornamos el string original si no es HTML
             return self
         }
     }
 }
-
-
-
-
-
 

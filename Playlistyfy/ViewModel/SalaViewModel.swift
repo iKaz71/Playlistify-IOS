@@ -1,17 +1,18 @@
 import Foundation
 
 class SalaViewModel: ObservableObject {
-    @Published var canciones: [Cancion] = []
+    @Published var canciones: [Cancion] = [] // Usa el modelo Cancion, NO CancionEnCola
 
     var current: Cancion? {
         canciones.first
     }
 
-    func escucharCola(sessionId: String) {
-        FirebaseQueueManager.shared.escucharCola(sessionId: sessionId) { [weak self] lista in
-            self?.canciones = lista
+    func actualizarCola(sessionId: String) {
+        PlaylistifyAPI.shared.obtenerColaOrdenada(sessionId: sessionId) { cancionesOrdenadas in
+            DispatchQueue.main.async {
+                self.canciones = cancionesOrdenadas
+            }
         }
     }
 }
-
 
