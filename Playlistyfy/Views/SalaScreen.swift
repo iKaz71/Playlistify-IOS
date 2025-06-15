@@ -1,7 +1,5 @@
-//
 //  SalaScreen.swift
 //  Playlistyfy
-//
 
 import SwiftUI
 import Kingfisher
@@ -10,6 +8,7 @@ import FirebaseDatabase
 
 struct SalaScreen: View {
     let sessionId: String
+
     @State private var cancionesDict: [String: Cancion] = [:]
     @State private var ordenCanciones: [String] = []
     @State private var cancionActual: Cancion? = nil
@@ -19,8 +18,16 @@ struct SalaScreen: View {
     @State private var mostrarBuscador = false
     @State private var cancionAPlayNext: Cancion? = nil
     @State private var pushKeyAPlayNext: String? = nil
-    
 
+    // Estados para el menú bottom sheet y diálogo de nombre
+    @State private var showMenuSheet = false
+    @State private var showNombreSheet = false
+    @State private var nombreUsuario: String = UserDefaults.standard.string(forKey: "nombreUsuario") ?? "Invitado"
+    @State private var emailUsuario: String = ""
+    @State private var rolUsuario: String = "Invitado"
+    @State private var showQRScanner = false
+    @State private var showCerrarSesionAlert = false
+    @State private var showSalirSalaAlert = false
 
     // Búsqueda
     @State private var query = ""
@@ -37,7 +44,6 @@ struct SalaScreen: View {
     var body: some View {
         ZStack {
             fondoOscuro.ignoresSafeArea()
-
             VStack(spacing: 16) {
                 // Barra superior
                 HStack {
@@ -53,7 +59,10 @@ struct SalaScreen: View {
                             .onTapGesture {
                                 mostrarBuscador = true
                             }
-                        Image(systemName: "person.circle")
+                        Image(systemName: "line.3.horizontal")
+                            .onTapGesture {
+                                showMenuSheet = true
+                            }
                     }
                     .foregroundColor(.white)
                     .font(.system(size: 20))
@@ -66,8 +75,11 @@ struct SalaScreen: View {
                     Text("Código: \(codigoSesion)")
                         .foregroundColor(.white)
                     Spacer()
-                    Text("Rol: Anfitrión")
+                    Text("Usuario: \(nombreUsuario)")
                         .foregroundColor(.white)
+                    // Si quieres mostrar rol dinámico, aquí puedes ponerlo
+                    // Text("Rol: \(rolUsuario)")
+                    //    .foregroundColor(.white)
                 }
                 .padding(.horizontal)
 
@@ -97,7 +109,6 @@ struct SalaScreen: View {
                             .foregroundColor(.white)
                             .padding(.horizontal)
 
-                        // 💡 Se muestran las canciones en el orden del array de pushKeys
                         let enCola: [(String, Cancion)] = obtenerEnCola()
 
                         List {
@@ -110,9 +121,7 @@ struct SalaScreen: View {
                                     .listRowInsets(EdgeInsets())
                                     .swipeActions(edge: .trailing) {
                                         Button(role: .destructive) {
-                                            print("🟠 Botón eliminar presionado para pushKey:", pushKey)
                                             pushKeyAEliminar = pushKey
-                                            // Forzamos el refresh del alert:
                                             cancionAEliminar = nil
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                                                 cancionAEliminar = c
@@ -124,7 +133,6 @@ struct SalaScreen: View {
                                     .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                         if index > 0 {
                                             Button {
-                                                // Forzamos el refresh del alert: :v
                                                 pushKeyAPlayNext = pushKey
                                                 cancionAPlayNext = nil
                                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
@@ -147,23 +155,17 @@ struct SalaScreen: View {
                         .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 80 : 0)
                         .animation(.spring(), value: cancionesDict)
                         .alert(item: $cancionAEliminar) { cancion in
-                            print("🟡 Alert mostrado para pushKey:", pushKeyAEliminar ?? "-")
-                            return Alert(
+                            Alert(
                                 title: Text("¿Eliminar canción?"),
                                 message: Text("¿Estás seguro de eliminar \"\(cancion.titulo)\" de la cola?"),
                                 primaryButton: .destructive(Text("Eliminar")) {
-                                    print("🟢 Confirmando eliminación en alert para pushKey:", pushKeyAEliminar ?? "-")
                                     if let pushKey = pushKeyAEliminar {
                                         PlaylistifyAPI.shared.eliminarCancion(
                                             sessionId: sessionId,
                                             pushKey: pushKey,
                                             userId: "iOS"
                                         ) { error in
-                                            if let error = error {
-                                                print("❌ Error al eliminar: \(error.localizedDescription)")
-                                            } else {
-                                                print("✅ Eliminada correctamente")
-                                            }
+                                            // Handle error si quieres
                                         }
                                     }
                                 },
@@ -180,28 +182,22 @@ struct SalaScreen: View {
                                             sessionId: sessionId,
                                             pushKey: pushKey
                                         ) { error in
-                                            if let error = error {
-                                                print("❌ Error al mover a Play Next: \(error.localizedDescription)")
-                                            } else {
-                                                print("✅ Canción movida a Play Next")
-                                            }
+                                            // Handle error si quieres
                                         }
                                     }
                                 },
                                 secondaryButton: .cancel()
                             )
                         }
-
-
                     }
                 }
                 Spacer(minLength: 8)
             }
         }
+        // Bottom sheet de buscador
         .sheet(isPresented: $mostrarBuscador) {
             ZStack {
                 fondoOscuro.ignoresSafeArea()
-
                 ScrollView {
                     VStack(spacing: 16) {
                         Text("Buscar en YouTube")
@@ -294,6 +290,61 @@ struct SalaScreen: View {
                 resultados.removeAll()
             }
         }
+        // Bottom sheet de menú hamburguesa
+        .sheet(isPresented: $showMenuSheet) {
+            MenuBottomSheet(
+                nombreUsuario: nombreUsuario,
+                rolUsuario: rolUsuario,
+                emailUsuario: emailUsuario,
+                onCambiarNombre: { showNombreSheet = true },
+                onEscanearQR: { showQRScanner = true },
+                onCerrarSesion: { showCerrarSesionAlert = true },
+                onSalirSala: { showSalirSalaAlert = true }
+            )
+            .presentationDetents([.fraction(0.33)]) // Ajusta la fracción según tu menú
+            .presentationDragIndicator(.hidden)
+        }
+
+
+
+        // CambiarNombreSheet sigue igual:
+        .sheet(isPresented: $showNombreSheet) {
+            CambiarNombreSheet(nombreUsuario: $nombreUsuario)
+        }
+        // Sheet de escaneo QR (puedes implementar después)
+        .sheet(isPresented: $showQRScanner) {
+            // QRScannerView(sessionId: sessionId) // Implementa o deja un placeholder
+            Text("Escáner QR (por implementar)")
+                .foregroundColor(.white)
+                .font(.title2)
+                .padding()
+        }
+        // Alert para cerrar sesión
+        .alert(isPresented: $showCerrarSesionAlert) {
+            Alert(
+                title: Text("Cerrar sesión"),
+                message: Text("¿Seguro que quieres cerrar sesión de Google?"),
+                primaryButton: .destructive(Text("Cerrar sesión")) {
+                    // Aquí haz tu lógica de sign out Google, luego:
+                    nombreUsuario = "Invitado"
+                    emailUsuario = ""
+                    rolUsuario = "Invitado"
+                    UserDefaults.standard.set(nombreUsuario, forKey: "nombreUsuario")
+                },
+                secondaryButton: .cancel()
+            )
+        }
+        // Alert para salir de sala
+        .alert(isPresented: $showSalirSalaAlert) {
+            Alert(
+                title: Text("Salir de sala"),
+                message: Text("¿Seguro que quieres salir de la sala actual?"),
+                primaryButton: .destructive(Text("Salir")) {
+                    // Implementa navegación o reseteo de sesión si quieres
+                },
+                secondaryButton: .cancel()
+            )
+        }
         .onAppear {
             escucharColaYOrden()
             FirebaseQueueManager.shared.escucharPlayback(sessionId: sessionId) { actual in
@@ -311,12 +362,10 @@ struct SalaScreen: View {
 
     // -- FUNCIONES PRIVADAS --
 
-    // Leemos objeto y array de orden, y sincronizamos la lista en la UI
     private func escucharColaYOrden() {
         let refCola = Database.database().reference().child("queues").child(sessionId)
         let refOrden = Database.database().reference().child("queuesOrder").child(sessionId)
 
-        // Escuchamos el objeto de canciones
         refCola.observe(.value, with: { snapshot in
             let value = snapshot.value as? [String: Any] ?? [:]
             var nuevasCancionesDict: [String: Cancion] = [:]
@@ -343,7 +392,6 @@ struct SalaScreen: View {
             }
         })
 
-        // Escuchamos el array de orden
         refOrden.observe(.value, with: { snapshot in
             let orden = snapshot.value as? [String] ?? []
             DispatchQueue.main.async {
@@ -353,7 +401,6 @@ struct SalaScreen: View {
         })
     }
 
-    // Devuelvemos las canciones en cola en el orden correcto y con el pushKey
     private func obtenerEnCola() -> [(String, Cancion)] {
         ordenCanciones.compactMap { pushKey in
             guard let c = cancionesDict[pushKey] else { return nil }
@@ -410,4 +457,5 @@ struct SalaScreen: View {
         }
     }
 }
+
 
