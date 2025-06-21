@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- CAMPOS OBLIGATORIOS DEL SISTEMA -->
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+
+    <!-- SOLO IPHONE COMPATIBLE -->
+    <key>UIDeviceFamily</key>
+    <array>
+        <integer>1</integer>
+    </array>
+
+    <!-- CLAVES PERSONALIZADAS -->
+    <key>NSCameraUsageDescription</key>
+    <string>Necesitamos acceso a la cámara para escanear códigos QR y validar el admin.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>No usamos micrófono pero es requerido por algunos frameworks de cámara.</string>
+    <key>YOUTUBE_API_KEY</key>
+    <string>AIzaSyAK1YojxUN5kJBSqUzycZsgaQbXTdlo1oA</string>
+    <key>GIDClientID</key>
+    <string>556404604439-70ceilel77nvosumgas6j3v0sgpgo5sj.apps.googleusercontent.com</string>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps.556404604439-70ceilel77nvosumgas6j3v0sgpgo5sj</string>
+            </array>
+        </dict>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+</dict>
+</plist>
+
